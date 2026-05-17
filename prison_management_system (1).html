@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NCoS Prison Management System</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── LIGHT MODE ── */
+  :root {
+    --bg: #f5f5f3;
+    --surface: #ffffff;
+    --surface2: #f0efec;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --text: #1a1a18;
+    --muted: #6b6b68;
+    --accent: #185FA5;
+    --accent-light: #e6f1fb;
+    --accent-nav: #e6f1fb;
+    --danger: #A32D2D;
+    --danger-light: #FCEBEB;
+    --success: #3B6D11;
+    --success-light: #EAF3DE;
+    --warning: #854F0B;
+    --warning-light: #FAEEDA;
+    --sidebar-w: 230px;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.07);
+    --input-bg: #ffffff;
+    --hover-row: #fafaf8;
+    --thead-bg: #f0efec;
+  }
+
+  /* ── DARK MODE ── */
+  [data-theme="dark"] {
+    --bg: #111110;
+    --surface: #1c1c1a;
+    --surface2: #242422;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #e8e8e5;
+    --muted: #8a8a86;
+    --accent: #4d9de0;
+    --accent-light: rgba(77,157,224,0.12);
+    --accent-nav: rgba(77,157,224,0.15);
+    --danger: #e06464;
+    --danger-light: rgba(224,100,100,0.12);
+    --success: #6bbf3a;
+    --success-light: rgba(107,191,58,0.12);
+    --warning: #e0a840;
+    --warning-light: rgba(224,168,64,0.12);
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --input-bg: #1c1c1a;
+    --hover-row: #212120;
+    --thead-bg: #242422;
+  }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; display: flex; flex-direction: column; transition: background 0.2s, color 0.2s; }
+  a { color: var(--accent); text-decoration: none; }
+
+  /* ── LOGIN ── */
+  #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg); }
+  .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 36px 32px; width: 400px; box-shadow: var(--shadow); }
+  .login-logo { text-align: center; margin-bottom: 28px; }
+  .login-logo .icon { font-size: 36px; margin-bottom: 10px; }
+  .login-logo h1 { font-size: 20px; font-weight: 600; }
+  .login-logo p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+  /* ── LAYOUT ── */
+  #app { display: none; min-height: 100vh; flex-direction: row; }
+  #sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; z-index: 10; }
+  #main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ── SIDEBAR ── */
+  .sb-header { padding: 20px 16px 14px; border-bottom: 1px solid var(--border); }
+  .sb-header .logo-text { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .sb-header .logo-sub { font-size: 11px; color: var(--muted); margin-top: 3px; padding-left: 26px; }
+  .sb-section { padding: 14px 12px 4px; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin: 1px 6px; border-radius: var(--radius); cursor: pointer; font-size: 13px; color: var(--muted); transition: all 0.12s; border: 1px solid transparent; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--accent-nav); color: var(--accent); font-weight: 500; border-color: rgba(77,157,224,0.2); }
+  .nav-item .ni { font-size: 16px; width: 20px; text-align: center; }
+  .sb-footer { margin-top: auto; padding: 12px 6px; border-top: 1px solid var(--border); }
+  .sb-user { padding: 10px 12px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+
+  /* ── TOPBAR ── */
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 13px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 5; }
+  .topbar h2 { font-size: 16px; font-weight: 600; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+  /* ── CONTENT ── */
+  #content { padding: 24px; flex: 1; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── COMPONENTS ── */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--surface); cursor: pointer; font-size: 13px; color: var(--text); font-family: inherit; transition: all 0.12s; white-space: nowrap; }
+  .btn:hover { background: var(--surface2); }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: #0C447C; border-color: #0C447C; }
+  .btn-danger { background: var(--danger-light); color: var(--danger); border-color: rgba(163,45,45,0.25); }
+  .btn-danger:hover { background: #f7c1c1; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-icon { padding: 6px 8px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 16px; overflow: hidden; }
+  .card-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-head h3 { font-size: 14px; font-weight: 600; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .stat-value { font-size: 30px; font-weight: 600; margin-top: 6px; line-height: 1; }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: var(--thead-bg); }
+  th { padding: 10px 16px; text-align: left; font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+  td { padding: 11px 16px; border-top: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  tr:hover td { background: var(--hover-row); }
+
+  .badge { display: inline-flex; align-items: center; font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+  .b-danger { background: var(--danger-light); color: var(--danger); }
+  .b-success { background: var(--success-light); color: var(--success); }
+  .b-warning { background: var(--warning-light); color: var(--warning); }
+  .b-info { background: var(--accent-light); color: var(--accent); }
+  .b-gray { background: var(--surface2); color: var(--muted); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 9px 12px; border: 1px solid var(--border2); border-radius: var(--radius);
+    font-size: 13px; color: var(--text); background: var(--input-bg); font-family: inherit;
+    transition: border 0.12s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(24,95,165,0.1);
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  .search-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .search-bar input, .search-bar select { padding: 8px 12px; border: 1px solid var(--border2); border-radius: var(--radius); font-size: 13px; color: var(--text); background: var(--input-bg); font-family: inherit; }
+  .search-bar input { flex: 1; min-width: 200px; }
+
+  .alert { padding: 11px 16px; border-radius: var(--radius); font-size: 13px; margin-bottom: 16px; display: none; font-weight: 500; }
+  .alert.show { display: block; }
+  .alert-success { background: var(--success-light); color: var(--success); border: 1px solid #c0dd97; }
+  .alert-error { background: var(--danger-light); color: var(--danger); border: 1px solid #f7c1c1; }
+
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-light); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--accent); flex-shrink: 0; }
+
+  /* ── MODAL ── */
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); width: 560px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow); animation: modalIn 0.18s ease; }
+  @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-head { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--surface); z-index: 1; }
+  .modal-head h3 { font-size: 15px; font-weight: 600; }
+  .modal-close { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 18px; padding: 4px; border-radius: var(--radius); transition: background 0.1s; }
+  .modal-close:hover { background: var(--surface2); }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* ── DETAIL ROWS ── */
+  .detail-section { margin-bottom: 18px; }
+  .detail-section h4 { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+  .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; gap: 16px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { color: var(--muted); flex-shrink: 0; }
+  .detail-val { text-align: right; font-weight: 500; }
+
+  /* ── PROGRESS ── */
+  .progress { height: 7px; background: var(--surface2); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+
+  /* ── CELL CARDS ── */
+  .cell-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .cell-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; }
+
+  /* ── SECTION CARD ── */
+  .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 16px; overflow: hidden; }
+  .section-card .sc-head { padding: 13px 18px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 600; }
+  .section-card .sc-body { padding: 18px; }
+
+  /* ── ACTIVITY ── */
+  .activity-item { display: flex; gap: 12px; padding: 11px 18px; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; }
+  .activity-time { color: var(--muted); margin-top: 2px; }
+
+  /* ── REPORT CARDS ── */
+  .report-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+  .report-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; text-align: center; cursor: pointer; transition: all 0.15s; }
+  .report-card:hover { border-color: var(--accent); background: var(--accent-light); }
+  .report-card .rc-icon { font-size: 28px; margin-bottom: 10px; }
+  .report-card .rc-title { font-size: 13px; font-weight: 600; }
+  .report-card .rc-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ── DARK MODE BADGE OVERRIDES ── */
+  [data-theme="dark"] .b-danger  { background: rgba(224,100,100,0.15); color: #e07878; }
+  [data-theme="dark"] .b-success { background: rgba(107,191,58,0.15);  color: #80c94d; }
+  [data-theme="dark"] .b-warning { background: rgba(224,168,64,0.15);  color: #e0b84d; }
+  [data-theme="dark"] .b-info    { background: rgba(77,157,224,0.15);  color: #6ab5e8; }
+  [data-theme="dark"] .b-gray    { background: rgba(255,255,255,0.07); color: var(--muted); }
+  [data-theme="dark"] .alert-success { background: rgba(107,191,58,0.12); color: #80c94d; border-color: rgba(107,191,58,0.3); }
+  [data-theme="dark"] .alert-error   { background: rgba(224,100,100,0.12); color: #e07878; border-color: rgba(224,100,100,0.3); }
+  [data-theme="dark"] .report-card:hover { border-color: var(--accent); background: var(--accent-light); }
+  [data-theme="dark"] .login-box { box-shadow: 0 4px 32px rgba(0,0,0,0.5); }
+  [data-theme="dark"] option { background: #1c1c1a; color: #e8e8e5; }
+  /* helpers */
+  .gap-8 { gap: 8px; }
+  .items-center { align-items: center; }
+  .ml-auto { margin-left: auto; }
+  .text-muted { color: var(--muted); }
+  .text-sm { font-size: 12px; }
+  .fw-600 { font-weight: 600; }
+  .mb-16 { margin-bottom: 16px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ LOGIN ═══════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon">🏛️</div>
+      <h1>Prison Management System</h1>
+      <p>Nigerian Correctional Service (NCoS)</p>
+    </div>
+    <div id="login-alert" class="alert alert-error">Invalid email or password. Please try again.</div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>Admin Email</label>
+      <input type="email" id="l-email" value="admin@ncos.gov.ng" placeholder="admin@ncos.gov.ng">
+    </div>
+    <div class="form-group" style="margin-bottom:20px;">
+      <label>Password</label>
+      <input type="password" id="l-pw" value="admin123" placeholder="••••••••">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px;" onclick="doLogin()">Sign in →</button>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;">Default: admin@ncos.gov.ng / admin123</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ APP ═══════════════════════════════ -->
+<div id="app" style="display:none;min-height:100vh;position:relative;">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-header">
+      <div class="logo-text">🏛️ NCoS — PMS</div>
+      <div class="logo-sub">Nigerian Correctional Service</div>
+    </div>
+
+    <div class="sb-section">Main</div>
+    <div class="nav-item active" onclick="nav('dashboard')"><span class="ni">📊</span> Dashboard</div>
+    <div class="nav-item" onclick="nav('inmates')"><span class="ni">👥</span> Inmates</div>
+    <div class="nav-item" onclick="nav('register')"><span class="ni">➕</span> Register Inmate</div>
+    <div class="nav-item" onclick="nav('cases')"><span class="ni">📋</span> Cases & Offenses</div>
+
+    <div class="sb-section">Facility</div>
+    <div class="nav-item" onclick="nav('cells')"><span class="ni">🚪</span> Cell Blocks</div>
+    <div class="nav-item" onclick="nav('guards')"><span class="ni">🛡️</span> Guard Management</div>
+    <div class="nav-item" onclick="nav('visitors')"><span class="ni">👤</span> Visitor Logs</div>
+    <div class="nav-item" onclick="nav('reports')"><span class="ni">📈</span> Reports</div>
+
+    <div class="sb-section">System</div>
+    <div class="nav-item" onclick="nav('settings')"><span class="ni">⚙️</span> Settings</div>
+
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="avatar" style="width:28px;height:28px;font-size:11px;" id="sb-avatar">AO</div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);" id="sb-name">Supt. Adaeze Obi</div>
+          <div style="font-size:11px;">Administrator</div>
+        </div>
+      </div>
+      <button class="btn btn-sm" style="width:calc(100% - 12px);margin:4px 6px;justify-content:center;" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div class="topbar">
+      <h2 id="page-title">Dashboard</h2>
+      <div class="topbar-right">
+        <span style="font-size:12px;color:var(--muted);" id="topbar-date"></span>
+        <button id="theme-toggle" class="btn btn-sm" onclick="toggleTheme()" title="Toggle dark/light mode" style="font-size:16px;padding:5px 10px;">🌙</button>
+        <span style="font-size:12px;background:var(--success-light);color:var(--success);padding:4px 10px;border-radius:20px;font-weight:600;">● System Online</span>
+      </div>
+    </div>
+
+    <div id="content">
+
+      <!-- ── DASHBOARD ── -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat">
+            <div class="stat-label">Total Inmates</div>
+            <div class="stat-value" id="s-total">0</div>
+            <div class="stat-sub">All registered records</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Awaiting Trial</div>
+            <div class="stat-value" id="s-awaiting" style="color:var(--warning)">0</div>
+            <div class="stat-sub" id="s-awaiting-pct">— of population</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Convicted</div>
+            <div class="stat-value" id="s-convicted" style="color:var(--danger)">0</div>
+            <div class="stat-sub">Serving sentences</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Released</div>
+            <div class="stat-value" id="s-released" style="color:var(--success)">0</div>
+            <div class="stat-sub">Ex-convicts on record</div>
+          </div>
+        </div>
+
+        <div class="two-col" style="margin-bottom:16px;">
+          <div class="card">
+            <div class="card-head"><h3>Security classification</h3></div>
+            <div style="padding:16px 18px;" id="dash-security"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Recent activity</h3></div>
+            <div id="dash-activity"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Latest registered inmates</h3>
+            <button class="btn btn-sm" onclick="nav('inmates')">View all →</button>
+          </div>
+          <table id="dash-table">
+            <thead><tr><th>ID</th><th>Name</th><th>Offense</th><th>Status</th><th>Security</th><th>Cell</th></tr></thead>
+            <tbody id="dash-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── INMATES ── -->
+      <div class="page" id="page-inmates">
+        <div id="inmate-alert" class="alert"></div>
+        <div class="search-bar">
+          <input type="text" id="si-q" placeholder="🔍  Search by name, ID, offense..." oninput="renderInmateTable()">
+          <select id="si-status" onchange="renderInmateTable()">
+            <option value="">All statuses</option>
+            <option>Awaiting Trial</option>
+            <option>Convicted</option>
+            <option>Released</option>
+          </select>
+          <select id="si-sec" onchange="renderInmateTable()">
+            <option value="">All security levels</option>
+            <option>Minimum</option>
+            <option>Medium</option>
+            <option>Maximum</option>
+          </select>
+          <select id="si-gender" onchange="renderInmateTable()">
+            <option value="">All genders</option>
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+          <button class="btn btn-primary" onclick="nav('register')">➕ Register New</button>
+        </div>
+        <div class="card">
+          <table id="inmate-table">
+            <thead><tr><th>ID</th><th>Name</th><th>Gender</th><th>Offense</th><th>Status</th><th>Security</th><th>Cell</th><th>Admission</th><th>Actions</th></tr></thead>
+            <tbody id="inmate-tbody"></tbody>
+          </table>
+        </div>
+        <div id="inmate-count" style="font-size:12px;color:var(--muted);text-align:right;margin-top:8px;"></div>
+      </div>
+
+      <!-- ── REGISTER ── -->
+      <div class="page" id="page-register">
+        <div id="reg-alert" class="alert"></div>
+        <div class="section-card">
+          <div class="sc-head">Personal Information</div>
+          <div class="sc-body">
+            <div class="form-grid">
+              <div class="form-group"><label>First Name *</label><input id="r-fname" placeholder="e.g. Emeka"></div>
+              <div class="form-group"><label>Last Name *</label><input id="r-lname" placeholder="e.g. Okonkwo"></div>
+              <div class="form-group"><label>Date of Birth</label><input id="r-dob" type="date"></div>
+              <div class="form-group"><label>Gender</label>
+                <select id="r-gender"><option>Male</option><option>Female</option><option>Other</option></select>
+              </div>
+              <div class="form-group"><label>State of Origin</label><input id="r-state" placeholder="e.g. Lagos"></div>
+              <div class="form-group"><label>Nationality</label><input id="r-nation" placeholder="e.g. Nigerian" value="Nigerian"></div>
+              <div class="form-group full"><label>Home Address</label><input id="r-address" placeholder="Last known address before incarceration"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="sc-head">Case Information</div>
+          <div class="sc-body">
+            <div class="form-grid">
+              <div class="form-group"><label>Offense Category *</label>
+                <select id="r-offense">
+                  <option>Armed robbery</option><option>Murder / homicide</option>
+                  <option>Drug trafficking</option><option>Fraud / embezzlement</option>
+                  <option>Assault</option><option>Theft</option><option>Kidnapping</option>
+                  <option>Terrorism</option><option>Sexual offense</option><option>Cybercrime</option><option>Other</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Status *</label>
+                <select id="r-status"><option>Awaiting Trial</option><option>Convicted</option><option>Released</option></select>
+              </div>
+              <div class="form-group"><label>Security Classification</label>
+                <select id="r-sec"><option>Minimum</option><option>Medium</option><option>Maximum</option></select>
+              </div>
+              <div class="form-group"><label>Cell Block</label>
+                <select id="r-cell"><option>Block A</option><option>Block B</option><option>Block C (Female)</option><option>Block D</option><option>Remand Wing</option></select>
+              </div>
+              <div class="form-group"><label>Admission Date</label><input id="r-admit" type="date"></div>
+              <div class="form-group"><label>Expected Release Date</label><input id="r-release" type="date"></div>
+              <div class="form-group"><label>Court / Case Number</label><input id="r-court" placeholder="e.g. HCL/12A/2024"></div>
+              <div class="form-group"><label>Presiding Judge</label><input id="r-judge" placeholder="e.g. Hon. Justice Adewale"></div>
+              <div class="form-group full"><label>Case Description / Charges</label>
+                <textarea id="r-desc" placeholder="Provide a brief summary of the offense, circumstances of arrest, and relevant case notes..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="sc-head">Next of Kin / Emergency Contact</div>
+          <div class="sc-body">
+            <div class="form-grid">
+              <div class="form-group"><label>Full Name</label><input id="r-kin-name" placeholder="Next of kin name"></div>
+              <div class="form-group"><label>Relationship</label>
+                <select id="r-kin-rel"><option>Spouse</option><option>Parent</option><option>Sibling</option><option>Child</option><option>Other</option></select>
+              </div>
+              <div class="form-group"><label>Phone Number</label><input id="r-kin-phone" placeholder="e.g. 08012345678"></div>
+              <div class="form-group"><label>Address</label><input id="r-kin-addr" placeholder="Next of kin address"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button class="btn" onclick="clearRegForm()">Clear form</button>
+          <button class="btn" onclick="nav('inmates')">Cancel</button>
+          <button class="btn btn-primary" onclick="registerInmate()">✅ Register Inmate</button>
+        </div>
+      </div>
+
+      <!-- ── CASES ── -->
+      <div class="page" id="page-cases">
+        <div class="stats-grid" id="case-stats" style="grid-template-columns:repeat(3,1fr);"></div>
+        <div class="search-bar">
+          <input type="text" id="sc-q" placeholder="🔍  Search by inmate name, ID, offense..." oninput="renderCaseTable()">
+          <select id="sc-status" onchange="renderCaseTable()">
+            <option value="">All statuses</option><option>Awaiting Trial</option><option>Convicted</option><option>Released</option>
+          </select>
+        </div>
+        <div class="card">
+          <table id="case-table">
+            <thead><tr><th>Inmate ID</th><th>Name</th><th>Offense</th><th>Status</th><th>Court #</th><th>Admission</th><th>Release</th><th>Actions</th></tr></thead>
+            <tbody id="case-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── CELLS ── -->
+      <div class="page" id="page-cells">
+        <div class="cell-grid" id="cell-grid"></div>
+      </div>
+
+      <!-- ── GUARDS ── -->
+      <div class="page" id="page-guards">
+        <div id="guard-alert" class="alert"></div>
+        <div class="search-bar">
+          <input type="text" id="sg-q" placeholder="🔍  Search guards..." oninput="renderGuardTable()">
+          <select id="sg-shift" onchange="renderGuardTable()">
+            <option value="">All shifts</option>
+            <option>Morning (6am–2pm)</option><option>Afternoon (2pm–10pm)</option><option>Night (10pm–6am)</option>
+          </select>
+          <button class="btn btn-primary" onclick="openModal('guard-modal')">➕ Add Guard</button>
+        </div>
+        <div class="card">
+          <table id="guard-table">
+            <thead><tr><th>Name</th><th>Rank</th><th>Badge No.</th><th>Assigned Block</th><th>Shift</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="guard-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── VISITORS ── -->
+      <div class="page" id="page-visitors">
+        <div id="visitor-alert" class="alert"></div>
+        <div class="search-bar">
+          <input type="text" id="sv-q" placeholder="🔍  Search visitors or inmates..." oninput="renderVisitorTable()">
+          <input type="date" id="sv-date" onchange="renderVisitorTable()" title="Filter by visit date">
+          <button class="btn btn-primary" onclick="openModal('visitor-modal')">➕ Log Visitor</button>
+        </div>
+        <div class="card">
+          <table id="visitor-table">
+            <thead><tr><th>Visitor Name</th><th>Relationship</th><th>Inmate Visited</th><th>Purpose</th><th>Date</th><th>Time In</th><th>Actions</th></tr></thead>
+            <tbody id="visitor-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── REPORTS ── -->
+      <div class="page" id="page-reports">
+        <div class="report-grid">
+          <div class="report-card" onclick="generateReport('population')">
+            <div class="rc-icon">📋</div>
+            <div class="rc-title">Inmate Population Report</div>
+            <div class="rc-sub">Full census with demographics</div>
+          </div>
+          <div class="report-card" onclick="generateReport('awaiting')">
+            <div class="rc-icon">⏳</div>
+            <div class="rc-title">Awaiting Trial Report</div>
+            <div class="rc-sub">Pre-trial detention status</div>
+          </div>
+          <div class="report-card" onclick="generateReport('release')">
+            <div class="rc-icon">🚪</div>
+            <div class="rc-title">Release Schedule</div>
+            <div class="rc-sub">Upcoming releases & completions</div>
+          </div>
+          <div class="report-card" onclick="generateReport('security')">
+            <div class="rc-icon">🛡️</div>
+            <div class="rc-title">Security Classification</div>
+            <div class="rc-sub">Minimum / Medium / Maximum</div>
+          </div>
+          <div class="report-card" onclick="generateReport('offense')">
+            <div class="rc-icon">⚖️</div>
+            <div class="rc-title">Offense Breakdown</div>
+            <div class="rc-sub">Categories and counts</div>
+          </div>
+          <div class="report-card" onclick="exportCSV()">
+            <div class="rc-icon">💾</div>
+            <div class="rc-title">Export to CSV</div>
+            <div class="rc-sub">Download full inmate data</div>
+          </div>
+        </div>
+        <div class="card" id="report-output" style="display:none;">
+          <div class="card-head"><h3 id="report-title">Report</h3><button class="btn btn-sm" onclick="printReport()">🖨️ Print</button></div>
+          <div style="padding:18px;" id="report-body"></div>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS ── -->
+      <div class="page" id="page-settings">
+        <div id="settings-alert" class="alert"></div>
+        <div class="section-card">
+          <div class="sc-head">Facility Information</div>
+          <div class="sc-body">
+            <div class="form-grid">
+              <div class="form-group"><label>Facility Name</label><input id="cfg-name" value="Kirikiri Medium Security Custodial Centre"></div>
+              <div class="form-group"><label>Location</label><input id="cfg-loc" value="Apapa, Lagos State, Nigeria"></div>
+              <div class="form-group"><label>Official Capacity</label><input id="cfg-cap" type="number" value="180"></div>
+              <div class="form-group"><label>Commanding Officer</label><input id="cfg-co" value="Supt. Adaeze Obi"></div>
+              <div class="form-group"><label>Phone</label><input id="cfg-phone" value="+234 1 5550001"></div>
+              <div class="form-group"><label>Email</label><input id="cfg-email" value="kirikiri@ncos.gov.ng"></div>
+            </div>
+            <div style="text-align:right;margin-top:14px;">
+              <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="sc-head">Admin Account</div>
+          <div class="sc-body">
+            <div class="form-grid">
+              <div class="form-group"><label>Full Name</label><input id="cfg-admin-name" value="Supt. Adaeze Obi"></div>
+              <div class="form-group"><label>Email</label><input id="cfg-admin-email" value="admin@ncos.gov.ng"></div>
+              <div class="form-group"><label>New Password</label><input type="password" id="cfg-pw1" placeholder="Leave blank to keep current"></div>
+              <div class="form-group"><label>Confirm Password</label><input type="password" id="cfg-pw2" placeholder="Repeat new password"></div>
+            </div>
+            <div style="text-align:right;margin-top:14px;">
+              <button class="btn btn-primary" onclick="updateAdmin()">Update Account</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="sc-head">Data Management</div>
+          <div class="sc-body" style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn" onclick="exportCSV()">💾 Export All Data (CSV)</button>
+            <button class="btn btn-danger" onclick="if(confirm('Reset ALL inmate data to defaults? This cannot be undone.')) resetData()">🗑️ Reset to Default Data</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══════════ MODALS ═══════════ -->
+
+<!-- Inmate Detail -->
+<div class="modal-backdrop" id="inmate-modal">
+  <div class="modal" style="width:620px;">
+    <div class="modal-head">
+      <h3 id="im-title">Inmate Profile</h3>
+      <button class="modal-close" onclick="closeModal('inmate-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="im-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" id="im-delete-btn">🗑️ Delete Record</button>
+      <button class="btn btn-sm" id="im-edit-btn">✏️ Edit</button>
+      <button class="btn btn-sm" onclick="closeModal('inmate-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Guard -->
+<div class="modal-backdrop" id="guard-modal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add Guard</h3><button class="modal-close" onclick="closeModal('guard-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Full Name *</label><input id="gm-name" placeholder="e.g. Warder Bola Adeyemi"></div>
+        <div class="form-group"><label>Badge Number *</label><input id="gm-badge" placeholder="e.g. NCS-G-0042"></div>
+        <div class="form-group"><label>Rank</label>
+          <select id="gm-rank"><option>Warder</option><option>Senior Warder</option><option>Chief Warder</option><option>Assistant Superintendent</option><option>Superintendent</option></select>
+        </div>
+        <div class="form-group"><label>Assigned Block</label>
+          <select id="gm-block"><option>Block A</option><option>Block B</option><option>Block C (Female)</option><option>Block D</option><option>Remand Wing</option><option>All blocks</option></select>
+        </div>
+        <div class="form-group"><label>Shift</label>
+          <select id="gm-shift"><option>Morning (6am–2pm)</option><option>Afternoon (2pm–10pm)</option><option>Night (10pm–6am)</option></select>
+        </div>
+        <div class="form-group"><label>Status</label>
+          <select id="gm-status"><option>On duty</option><option>Off duty</option><option>On leave</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('guard-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addGuard()">Add Guard</button>
+    </div>
+  </div>
+</div>
+
+<!-- Log Visitor -->
+<div class="modal-backdrop" id="visitor-modal">
+  <div class="modal">
+    <div class="modal-head"><h3>Log Visitor</h3><button class="modal-close" onclick="closeModal('visitor-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Visitor Full Name *</label><input id="vm-name" placeholder="Full name"></div>
+        <div class="form-group"><label>ID / NIN</label><input id="vm-id" placeholder="National ID or NIN"></div>
+        <div class="form-group"><label>Relationship to Inmate</label>
+          <select id="vm-rel"><option>Spouse</option><option>Parent</option><option>Sibling</option><option>Child</option><option>Friend</option><option>Legal counsel</option><option>Chaplain / Imam</option><option>Official</option><option>Other</option></select>
+        </div>
+        <div class="form-group"><label>Inmate Visited *</label>
+          <select id="vm-inmate"></select>
+        </div>
+        <div class="form-group"><label>Purpose of Visit</label>
+          <select id="vm-purpose"><option>Personal visit</option><option>Legal consultation</option><option>Medical</option><option>Religious / Pastoral</option><option>Official</option></select>
+        </div>
+        <div class="form-group"><label>Visit Date</label><input id="vm-date" type="date"></div>
+        <div class="form-group"><label>Time In</label><input id="vm-time" type="time"></div>
+        <div class="form-group"><label>Items Brought</label><input id="vm-items" placeholder="e.g. Food, books (leave blank if none)"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('visitor-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addVisitor()">Log Visit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Report Print -->
+<div class="modal-backdrop" id="print-modal">
+  <div class="modal" style="width:700px;">
+    <div class="modal-head"><h3 id="pm-title">Report</h3><button class="modal-close" onclick="closeModal('print-modal')">✕</button></div>
+    <div class="modal-body" id="pm-body"></div>
+    <div class="modal-footer"><button class="btn btn-primary" onclick="window.print()">🖨️ Print</button><button class="btn" onclick="closeModal('print-modal')">Close</button></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  DATA STORE
+// ═══════════════════════════════════════
+const DEFAULT_INMATES = [
+  {id:'NCS-001',fname:'Chibuike',lname:'Nwachukwu',dob:'1985-03-12',gender:'Male',state:'Anambra',nation:'Nigerian',address:'12 Zik Ave, Awka',offense:'Armed robbery',status:'Convicted',security:'Maximum',cell:'Block D',admit:'2021-06-01',release:'2031-06-01',court:'HCL/44/2021',judge:'Hon. Justice Uba',desc:'Convicted of armed robbery with grievous bodily harm at First Bank, Onitsha branch. Multiple prior offenses on record.',kinName:'Mrs. Ngozi Nwachukwu',kinRel:'Spouse',kinPhone:'08023456789',kinAddr:'12 Zik Ave, Awka'},
+  {id:'NCS-002',fname:'Amina',lname:'Suleiman',dob:'1995-09-22',gender:'Female',state:'Kano',nation:'Nigerian',address:'45 Kano Road, Kano',offense:'Drug trafficking',status:'Awaiting Trial',security:'Medium',cell:'Block C (Female)',admit:'2023-11-14',release:'',court:'FCT/HC/1102/2023',judge:'Hon. Justice Tanko',desc:'Arrested at Murtala Muhammed Airport with 2.3kg of heroin concealed in luggage. Case ongoing at Federal High Court.',kinName:'Yusuf Suleiman',kinRel:'Sibling',kinPhone:'07034567890',kinAddr:'45 Kano Road, Kano'},
+  {id:'NCS-003',fname:'Taiwo',lname:'Adeyemo',dob:'1990-01-30',gender:'Male',state:'Oyo',nation:'Nigerian',address:'7 Agodi Way, Ibadan',offense:'Fraud / embezzlement',status:'Convicted',security:'Minimum',cell:'Block A',admit:'2022-03-20',release:'2025-03-20',court:'HCL/22/2022',judge:'Hon. Justice Falana',desc:'Convicted of a ₦45 million Ponzi scheme targeting market traders in Ibadan. Good conduct noted.',kinName:'Mrs. Abike Adeyemo',kinRel:'Spouse',kinPhone:'08145678901',kinAddr:'7 Agodi Way, Ibadan'},
+  {id:'NCS-004',fname:'Emeka',lname:'Eze',dob:'1988-07-15',gender:'Male',state:'Enugu',nation:'Nigerian',address:'3 GRA, Enugu',offense:'Murder / homicide',status:'Awaiting Trial',security:'Maximum',cell:'Block D',admit:'2024-01-09',release:'',court:'HC/ENUGU/003/2024',judge:'Hon. Justice Obi',desc:'Alleged domestic homicide. Victim is spouse. Case referred to the High Court. Awaiting hearing on capital charge.',kinName:'Chukwuma Eze',kinRel:'Sibling',kinPhone:'09056789012',kinAddr:'3 GRA, Enugu'},
+  {id:'NCS-005',fname:'Fatima',lname:'Bello',dob:'1999-12-01',gender:'Female',state:'Borno',nation:'Nigerian',address:'22 Maiduguri St, Maiduguri',offense:'Theft',status:'Awaiting Trial',security:'Minimum',cell:'Block C (Female)',admit:'2024-08-03',release:'',court:'MAG/BNO/110/2024',judge:'—',desc:'Alleged theft of market goods valued at ₦85,000. Bail denied due to lack of surety. First-time offender.',kinName:'Aisha Bello',kinRel:'Parent',kinPhone:'08167890123',kinAddr:'22 Maiduguri St, Maiduguri'},
+  {id:'NCS-006',fname:'Segun',lname:'Akintola',dob:'1980-05-18',gender:'Male',state:'Ondo',nation:'Nigerian',address:'5 Akure Close, Akure',offense:'Kidnapping',status:'Convicted',security:'Maximum',cell:'Block D',admit:'2020-09-11',release:'2035-09-11',court:'HCL/89/2020',judge:'Hon. Justice Dada',desc:'Convicted of kidnap for ransom involving three victims. Sentence of 15 years without parole.',kinName:'Mrs. Funmi Akintola',kinRel:'Spouse',kinPhone:'07078901234',kinAddr:'5 Akure Close, Akure'},
+  {id:'NCS-007',fname:'Bola',lname:'Ogundimu',dob:'1993-04-25',gender:'Male',state:'Ekiti',nation:'Nigerian',address:'18 Ado Ekiti Road, Ado-Ekiti',offense:'Assault',status:'Awaiting Trial',security:'Medium',cell:'Block B',admit:'2024-05-17',release:'',court:'MAG/EKT/55/2024',judge:'—',desc:'Grievous bodily harm following a land dispute. Victim hospitalised with multiple fractures.',kinName:'Mrs. Tayo Ogundimu',kinRel:'Spouse',kinPhone:'08189012345',kinAddr:'18 Ado Ekiti Road'},
+  {id:'NCS-008',fname:'Halima',lname:'Ibrahim',dob:'1987-11-08',gender:'Female',state:'Sokoto',nation:'Nigerian',address:'9 Sultan Rd, Sokoto',offense:'Drug trafficking',status:'Convicted',security:'Medium',cell:'Block C (Female)',admit:'2022-07-30',release:'2027-07-30',court:'FCT/HC/770/2022',judge:'Hon. Justice Yusuf',desc:'Convicted of coordinating a heroin distribution ring across three northern states. Sentence of 5 years.',kinName:'Mallam Ibrahim',kinRel:'Parent',kinPhone:'09090123456',kinAddr:'9 Sultan Rd, Sokoto'},
+  {id:'NCS-009',fname:'Chidi',lname:'Okoye',dob:'1975-02-14',gender:'Male',state:'Imo',nation:'Nigerian',address:'34 Owerri Rd, Owerri',offense:'Cybercrime',status:'Released',security:'Minimum',cell:'Block A',admit:'2021-01-10',release:'2024-01-10',court:'FHC/IM/12/2021',judge:'Hon. Justice Ndukwe',desc:'Convicted under EFCC for romance scam. Released upon completion of 3-year sentence. Good conduct.',kinName:'Mrs. Ada Okoye',kinRel:'Spouse',kinPhone:'08012345678',kinAddr:'34 Owerri Rd, Owerri'},
+];
+
+const DEFAULT_GUARDS = [
+  {name:'Warder Kehinde Fashola',rank:'Senior Warder',badge:'NCS-G-0011',block:'Block A',shift:'Morning (6am–2pm)',status:'On duty'},
+  {name:'Warder Grace Okafor',rank:'Warder',badge:'NCS-G-0022',block:'Block C (Female)',shift:'Afternoon (2pm–10pm)',status:'On duty'},
+  {name:'P.O. Ibrahim Musa',rank:'Assistant Superintendent',badge:'NCS-G-0033',block:'All blocks',shift:'Morning (6am–2pm)',status:'On duty'},
+  {name:'Warder Sunny Dibia',rank:'Warder',badge:'NCS-G-0044',block:'Block D',shift:'Night (10pm–6am)',status:'Off duty'},
+  {name:'Warder Chisom Eze',rank:'Chief Warder',badge:'NCS-G-0055',block:'Block B',shift:'Afternoon (2pm–10pm)',status:'On duty'},
+];
+
+const DEFAULT_VISITORS = [
+  {name:'Mrs. Ngozi Nwachukwu',vid:'—',rel:'Spouse',inmate:'Chibuike Nwachukwu',inmateId:'NCS-001',purpose:'Personal visit',date:'2026-05-10',time:'10:00',items:'Food items'},
+  {name:'Barrister Kunle Adesanya',vid:'NBA/2019/0042',rel:'Legal counsel',inmate:'Emeka Eze',inmateId:'NCS-004',purpose:'Legal consultation',date:'2026-05-12',time:'14:00',items:'Documents'},
+  {name:'Yusuf Suleiman',vid:'—',rel:'Sibling',inmate:'Amina Suleiman',inmateId:'NCS-002',purpose:'Personal visit',date:'2026-05-14',time:'11:30',items:'Clothing'},
+  {name:'Mrs. Abike Akintola',vid:'—',rel:'Parent',inmate:'Segun Akintola',inmateId:'NCS-006',purpose:'Personal visit',date:'2026-05-15',time:'09:00',items:'None'},
+];
+
+let inmates = JSON.parse(localStorage.getItem('pms_inmates') || 'null') || JSON.parse(JSON.stringify(DEFAULT_INMATES));
+let guards  = JSON.parse(localStorage.getItem('pms_guards')  || 'null') || JSON.parse(JSON.stringify(DEFAULT_GUARDS));
+let visitors= JSON.parse(localStorage.getItem('pms_visitors')|| 'null') || JSON.parse(JSON.stringify(DEFAULT_VISITORS));
+let activity= JSON.parse(localStorage.getItem('pms_activity')|| 'null') || [
+  {icon:'🔐',msg:'System initialised — PMS v1.0 loaded',time:now()},
+  {icon:'👤',msg:'Admin signed in — Supt. Adaeze Obi',time:now()},
+];
+let adminCreds = JSON.parse(localStorage.getItem('pms_admin') || 'null') || {email:'admin@ncos.gov.ng',pw:'admin123',name:'Supt. Adaeze Obi'};
+let settings = JSON.parse(localStorage.getItem('pms_settings') || 'null') || {name:'Kirikiri Medium Security Custodial Centre',loc:'Apapa, Lagos State, Nigeria',cap:180,co:'Supt. Adaeze Obi'};
+
+function save() {
+  localStorage.setItem('pms_inmates', JSON.stringify(inmates));
+  localStorage.setItem('pms_guards',  JSON.stringify(guards));
+  localStorage.setItem('pms_visitors',JSON.stringify(visitors));
+  localStorage.setItem('pms_activity',JSON.stringify(activity.slice(0,50)));
+  localStorage.setItem('pms_admin',   JSON.stringify(adminCreds));
+  localStorage.setItem('pms_settings',JSON.stringify(settings));
+}
+
+function now() { return new Date().toLocaleString('en-NG',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function nextId() { const nums = inmates.map(i=>parseInt(i.id.replace('NCS-',''))||0); return 'NCS-'+String(Math.max(0,...nums)+1).padStart(3,'0'); }
+function ini(f,l) { return ((f||'')[0]||'').toUpperCase() + ((l||'')[0]||'').toUpperCase(); }
+
+function logActivity(icon,msg) { activity.unshift({icon,msg,time:now()}); save(); }
+
+// ═══════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════
+const PAGE_TITLES = {dashboard:'Dashboard',inmates:'Inmates',register:'Register New Inmate',cases:'Cases & Offenses',cells:'Cell Blocks',guards:'Guard Management',visitors:'Visitor Logs',reports:'Reports',settings:'Settings'};
+
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const el = document.getElementById('page-'+page);
+  if (el) el.classList.add('active');
+  document.getElementById('page-title').textContent = PAGE_TITLES[page] || page;
+  document.querySelectorAll('.nav-item').forEach(n=>{ if((n.getAttribute('onclick')||'').includes("'"+page+"'")) n.classList.add('active'); });
+  const renders = {dashboard:renderDashboard,inmates:renderInmateTable,cases:renderCasePage,cells:renderCells,guards:renderGuardTable,visitors:renderVisitorTable,reports:()=>document.getElementById('report-output').style.display='none',settings:loadSettings};
+  if (renders[page]) renders[page]();
+}
+
+// ═══════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════
+function doLogin() {
+  const em = document.getElementById('l-email').value.trim();
+  const pw = document.getElementById('l-pw').value;
+  if (em === adminCreds.email && pw === adminCreds.pw) {
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('sb-name').textContent = adminCreds.name;
+    document.getElementById('sb-avatar').textContent = ini(adminCreds.name.split(' ')[0], adminCreds.name.split(' ').slice(-1)[0]);
+    document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-NG',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    logActivity('🔐','Admin signed in — '+adminCreds.name);
+    nav('dashboard');
+  } else {
+    document.getElementById('login-alert').classList.add('show');
+    setTimeout(()=>document.getElementById('login-alert').classList.remove('show'),3000);
+  }
+}
+function doLogout() {
+  if (!confirm('Sign out of the system?')) return;
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+}
+document.getElementById('l-pw').addEventListener('keydown',e=>{ if(e.key==='Enter') doLogin(); });
+
+// ═══════════════════════════════════════
+//  BADGES
+// ═══════════════════════════════════════
+function statusBadge(s) {
+  const map = {'Convicted':'b-danger','Awaiting Trial':'b-warning','Released':'b-success'};
+  return `<span class="badge ${map[s]||'b-gray'}">${s}</span>`;
+}
+function secBadge(s) {
+  const map = {'Maximum':'b-danger','Medium':'b-warning','Minimum':'b-info'};
+  return `<span class="badge ${map[s]||'b-gray'}">${s}</span>`;
+}
+function dutyBadge(s) {
+  const map = {'On duty':'b-success','Off duty':'b-gray','On leave':'b-warning'};
+  return `<span class="badge ${map[s]||'b-gray'}">${s}</span>`;
+}
+
+// ═══════════════════════════════════════
+//  ALERTS
+// ═══════════════════════════════════════
+function showAlert(id, type, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'alert alert-' + type + ' show';
+  el.textContent = msg;
+  setTimeout(()=>el.classList.remove('show'), 4000);
+}
+
+// ═══════════════════════════════════════
+//  MODALS
+// ═══════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',function(e){ if(e.target===this) this.classList.remove('open'); }));
+
+// ═══════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════
+function renderDashboard() {
+  const total = inmates.length;
+  const awaiting = inmates.filter(i=>i.status==='Awaiting Trial').length;
+  const convicted = inmates.filter(i=>i.status==='Convicted').length;
+  const released = inmates.filter(i=>i.status==='Released').length;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-awaiting').textContent = awaiting;
+  document.getElementById('s-awaiting-pct').textContent = total ? Math.round(awaiting/total*100)+'% of population' : '—';
+  document.getElementById('s-convicted').textContent = convicted;
+  document.getElementById('s-released').textContent = released;
+
+  const cap = settings.cap || 180;
+  const sec = {Minimum:0,Medium:0,Maximum:0};
+  inmates.filter(i=>i.status!=='Released').forEach(i=>{ if(sec[i.security]!==undefined) sec[i.security]++; });
+  const secTotal = Object.values(sec).reduce((a,b)=>a+b,0)||1;
+  document.getElementById('dash-security').innerHTML = Object.entries(sec).map(([k,v])=>{
+    const pct = Math.round(v/secTotal*100);
+    const col = k==='Maximum'?'var(--danger)':k==='Medium'?'var(--warning)':'var(--accent)';
+    return `<div style="margin-bottom:14px;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span style="font-weight:500;">${k}</span><span style="color:var(--muted);">${v} inmates</span></div><div class="progress"><div class="progress-fill" style="width:${pct}%;background:${col};"></div></div></div>`;
+  }).join('');
+
+  document.getElementById('dash-activity').innerHTML = activity.slice(0,5).map(a=>
+    `<div class="activity-item"><div class="activity-icon" style="background:var(--surface2);font-size:14px;">${a.icon}</div><div><div>${a.msg}</div><div class="activity-time">${a.time}</div></div></div>`
+  ).join('') || '<div style="padding:16px;color:var(--muted);font-size:13px;">No activity yet.</div>';
+
+  const recent = [...inmates].slice(-5).reverse();
+  document.getElementById('dash-tbody').innerHTML = recent.map(i=>
+    `<tr><td style="color:var(--muted);font-size:12px;">${i.id}</td>
+     <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar">${ini(i.fname,i.lname)}</div><span style="font-weight:500;">${i.fname} ${i.lname}</span></div></td>
+     <td style="font-size:12px;">${i.offense}</td><td>${statusBadge(i.status)}</td><td>${secBadge(i.security)}</td><td style="font-size:12px;">${i.cell}</td></tr>`
+  ).join('') || '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted);">No inmates registered yet.</td></tr>';
+}
+
+// ═══════════════════════════════════════
+//  INMATES
+// ═══════════════════════════════════════
+function renderInmateTable() {
+  const q   = (document.getElementById('si-q')||{value:''}).value.toLowerCase();
+  const st  = (document.getElementById('si-status')||{value:''}).value;
+  const sec = (document.getElementById('si-sec')||{value:''}).value;
+  const gen = (document.getElementById('si-gender')||{value:''}).value;
+  const filtered = inmates.filter(i=>{
+    const search = (i.id+' '+i.fname+' '+i.lname+' '+i.offense+' '+i.cell).toLowerCase();
+    return (!q||search.includes(q)) && (!st||i.status===st) && (!sec||i.security===sec) && (!gen||i.gender===gen);
+  });
+  const tbody = document.getElementById('inmate-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = filtered.map(i=>
+    `<tr>
+      <td style="color:var(--muted);font-size:12px;white-space:nowrap;">${i.id}</td>
+      <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar">${ini(i.fname,i.lname)}</div><div><div style="font-weight:500;">${i.fname} ${i.lname}</div><div style="font-size:11px;color:var(--muted);">${i.state} State</div></div></div></td>
+      <td style="font-size:12px;">${i.gender}</td>
+      <td style="font-size:12px;">${i.offense}</td>
+      <td>${statusBadge(i.status)}</td>
+      <td>${secBadge(i.security)}</td>
+      <td style="font-size:12px;">${i.cell}</td>
+      <td style="font-size:12px;white-space:nowrap;">${i.admit||'—'}</td>
+      <td><div style="display:flex;gap:6px;">
+        <button class="btn btn-sm btn-icon" title="View details" onclick="viewInmate('${i.id}')">👁️</button>
+        <button class="btn btn-sm btn-icon btn-danger" title="Delete" onclick="deleteInmate('${i.id}')">🗑️</button>
+      </div></td>
+    </tr>`
+  ).join('') || '<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted);">No records match your search.</td></tr>';
+  const cnt = document.getElementById('inmate-count');
+  if (cnt) cnt.textContent = `Showing ${filtered.length} of ${inmates.length} records`;
+}
+
+function viewInmate(id) {
+  const i = inmates.find(x=>x.id===id);
+  if (!i) return;
+  document.getElementById('im-title').textContent = i.fname + ' ' + i.lname + ' — ' + i.id;
+  document.getElementById('im-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--border);">
+      <div style="width:56px;height:56px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--accent);">${ini(i.fname,i.lname)}</div>
+      <div><div style="font-size:18px;font-weight:600;">${i.fname} ${i.lname}</div><div style="font-size:13px;color:var(--muted);margin-top:2px;">${i.id} · ${i.gender} · ${i.state} State</div><div style="margin-top:6px;display:flex;gap:6px;">${statusBadge(i.status)} ${secBadge(i.security)}</div></div>
+    </div>
+    <div class="two-col" style="gap:20px;">
+      <div class="detail-section">
+        <h4>Personal</h4>
+        <div class="detail-row"><span class="detail-label">Date of birth</span><span class="detail-val">${i.dob||'—'}</span></div>
+        <div class="detail-row"><span class="detail-label">Nationality</span><span class="detail-val">${i.nation||'—'}</span></div>
+        <div class="detail-row"><span class="detail-label">Home address</span><span class="detail-val" style="max-width:180px;text-align:right;">${i.address||'—'}</span></div>
+      </div>
+      <div class="detail-section">
+        <h4>Case</h4>
+        <div class="detail-row"><span class="detail-label">Offense</span><span class="detail-val">${i.offense}</span></div>
+        <div class="detail-row"><span class="detail-label">Court number</span><span class="detail-val">${i.court||'—'}</span></div>
+        <div class="detail-row"><span class="detail-label">Presiding judge</span><span class="detail-val">${i.judge||'—'}</span></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <h4>Custody</h4>
+      <div class="two-col">
+        <div>
+          <div class="detail-row"><span class="detail-label">Cell block</span><span class="detail-val">${i.cell}</span></div>
+          <div class="detail-row"><span class="detail-label">Admission date</span><span class="detail-val">${i.admit||'—'}</span></div>
+          <div class="detail-row"><span class="detail-label">Expected release</span><span class="detail-val">${i.release||'Pending / TBD'}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <h4>Case description</h4>
+      <p style="font-size:13px;line-height:1.6;color:var(--text);">${i.desc||'No description provided.'}</p>
+    </div>
+    <div class="detail-section" style="margin-bottom:0;">
+      <h4>Next of kin</h4>
+      <div class="detail-row"><span class="detail-label">Name</span><span class="detail-val">${i.kinName||'—'}</span></div>
+      <div class="detail-row"><span class="detail-label">Relationship</span><span class="detail-val">${i.kinRel||'—'}</span></div>
+      <div class="detail-row"><span class="detail-label">Phone</span><span class="detail-val">${i.kinPhone||'—'}</span></div>
+      <div class="detail-row"><span class="detail-label">Address</span><span class="detail-val">${i.kinAddr||'—'}</span></div>
+    </div>`;
+  document.getElementById('im-delete-btn').onclick = ()=>{ closeModal('inmate-modal'); deleteInmate(id); };
+  document.getElementById('im-edit-btn').onclick = ()=>{ closeModal('inmate-modal'); editInmate(id); };
+  openModal('inmate-modal');
+}
+
+function deleteInmate(id) {
+  const i = inmates.find(x=>x.id===id);
+  if (!i || !confirm(`Delete record for ${i.fname} ${i.lname} (${i.id})? This cannot be undone.`)) return;
+  inmates = inmates.filter(x=>x.id!==id);
+  logActivity('🗑️',`Inmate record deleted — ${i.fname} ${i.lname} (${i.id})`);
+  save();
+  renderInmateTable();
+  renderDashboard();
+  showAlert('inmate-alert','success',`Record for ${i.fname} ${i.lname} has been deleted.`);
+}
+
+function editInmate(id) {
+  const i = inmates.find(x=>x.id===id);
+  if (!i) return;
+  nav('register');
+  setTimeout(()=>{
+    document.getElementById('r-fname').value = i.fname;
+    document.getElementById('r-lname').value = i.lname;
+    document.getElementById('r-dob').value = i.dob||'';
+    document.getElementById('r-gender').value = i.gender;
+    document.getElementById('r-state').value = i.state||'';
+    document.getElementById('r-nation').value = i.nation||'Nigerian';
+    document.getElementById('r-address').value = i.address||'';
+    document.getElementById('r-offense').value = i.offense;
+    document.getElementById('r-status').value = i.status;
+    document.getElementById('r-sec').value = i.security;
+    document.getElementById('r-cell').value = i.cell;
+    document.getElementById('r-admit').value = i.admit||'';
+    document.getElementById('r-release').value = i.release||'';
+    document.getElementById('r-court').value = i.court||'';
+    document.getElementById('r-judge').value = i.judge||'';
+    document.getElementById('r-desc').value = i.desc||'';
+    document.getElementById('r-kin-name').value = i.kinName||'';
+    document.getElementById('r-kin-rel').value = i.kinRel||'Spouse';
+    document.getElementById('r-kin-phone').value = i.kinPhone||'';
+    document.getElementById('r-kin-addr').value = i.kinAddr||'';
+    inmates = inmates.filter(x=>x.id!==id);
+    showAlert('reg-alert','success','Editing record for '+i.fname+' '+i.lname+'. Update and re-register to save changes.');
+  },100);
+}
+
+// ═══════════════════════════════════════
+//  REGISTER
+// ═══════════════════════════════════════
+function registerInmate() {
+  const f = document.getElementById('r-fname').value.trim();
+  const l = document.getElementById('r-lname').value.trim();
+  if (!f) { showAlert('reg-alert','error','First name is required.'); return; }
+  if (!l) { showAlert('reg-alert','error','Last name is required.'); return; }
+  const newId = nextId();
+  const inmate = {
+    id: newId, fname: f, lname: l,
+    dob: document.getElementById('r-dob').value,
+    gender: document.getElementById('r-gender').value,
+    state: document.getElementById('r-state').value.trim(),
+    nation: document.getElementById('r-nation').value.trim(),
+    address: document.getElementById('r-address').value.trim(),
+    offense: document.getElementById('r-offense').value,
+    status: document.getElementById('r-status').value,
+    security: document.getElementById('r-sec').value,
+    cell: document.getElementById('r-cell').value,
+    admit: document.getElementById('r-admit').value,
+    release: document.getElementById('r-release').value,
+    court: document.getElementById('r-court').value.trim(),
+    judge: document.getElementById('r-judge').value.trim(),
+    desc: document.getElementById('r-desc').value.trim(),
+    kinName: document.getElementById('r-kin-name').value.trim(),
+    kinRel: document.getElementById('r-kin-rel').value,
+    kinPhone: document.getElementById('r-kin-phone').value.trim(),
+    kinAddr: document.getElementById('r-kin-addr').value.trim(),
+  };
+  inmates.push(inmate);
+  logActivity('👤',`New inmate registered — ${f} ${l} (${newId})`);
+  save();
+  clearRegForm();
+  showAlert('reg-alert','success',`✅ ${f} ${l} registered as ${newId}. Record saved.`);
+}
+
+function clearRegForm() {
+  ['r-fname','r-lname','r-dob','r-state','r-address','r-admit','r-release','r-court','r-judge','r-desc','r-kin-name','r-kin-phone','r-kin-addr'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('r-nation').value='Nigerian';
+  document.getElementById('r-admit').value = today();
+}
+
+// ═══════════════════════════════════════
+//  CASES
+// ═══════════════════════════════════════
+function renderCasePage() {
+  const counts = {};
+  inmates.forEach(i=>{ counts[i.offense]=(counts[i.offense]||0)+1; });
+  const top3 = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  document.getElementById('case-stats').innerHTML = top3.map(([k,v])=>
+    `<div class="stat"><div class="stat-label">${k}</div><div class="stat-value" style="font-size:24px;">${v}</div><div class="stat-sub">inmates on record</div></div>`
+  ).join('');
+  renderCaseTable();
+}
+function renderCaseTable() {
+  const q = (document.getElementById('sc-q')||{value:''}).value.toLowerCase();
+  const st = (document.getElementById('sc-status')||{value:''}).value;
+  const filtered = inmates.filter(i=>{
+    const s = (i.id+' '+i.fname+' '+i.lname+' '+i.offense).toLowerCase();
+    return (!q||s.includes(q)) && (!st||i.status===st);
+  });
+  document.getElementById('case-tbody').innerHTML = filtered.map(i=>
+    `<tr>
+      <td style="font-size:12px;color:var(--muted);">${i.id}</td>
+      <td style="font-weight:500;">${i.fname} ${i.lname}</td>
+      <td>${i.offense}</td>
+      <td>${statusBadge(i.status)}</td>
+      <td style="font-size:12px;">${i.court||'—'}</td>
+      <td style="font-size:12px;">${i.admit||'—'}</td>
+      <td style="font-size:12px;">${i.release||'Pending'}</td>
+      <td><button class="btn btn-sm" onclick="viewInmate('${i.id}')">👁️ View</button></td>
+    </tr>`
+  ).join('') || '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted);">No records found.</td></tr>';
+}
+
+// ═══════════════════════════════════════
+//  CELLS
+// ═══════════════════════════════════════
+function renderCells() {
+  const blocks = ['Block A','Block B','Block C (Female)','Block D','Remand Wing'];
+  const caps   = {'Block A':40,'Block B':50,'Block C (Female)':30,'Block D':60,'Remand Wing':20};
+  document.getElementById('cell-grid').innerHTML = blocks.map(b=>{
+    const cap = caps[b]||40;
+    const occ = inmates.filter(i=>i.cell===b && i.status!=='Released').length;
+    const pct = cap>0?Math.round(occ/cap*100):0;
+    const col = pct>100?'var(--danger)':pct>85?'var(--warning)':'var(--success)';
+    const label = pct>100?'Overcrowded':pct>85?'Near capacity':'Normal';
+    const inmates_list = inmates.filter(i=>i.cell===b && i.status!=='Released');
+    return `<div class="cell-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div><div style="font-size:15px;font-weight:600;">${b}</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Capacity: ${cap}</div></div>
+        <span class="badge" style="background:${pct>100?'var(--danger-light)':pct>85?'var(--warning-light)':'var(--success-light)'};color:${col};">${label}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:24px;font-weight:600;margin-bottom:8px;">
+        <span>${occ}</span><span style="font-size:13px;color:var(--muted);align-self:flex-end;">/ ${cap} (${pct}%)</span>
+      </div>
+      <div class="progress"><div class="progress-fill" style="width:${Math.min(pct,100)}%;background:${col};"></div></div>
+      ${inmates_list.length ? `<div style="margin-top:12px;font-size:11px;color:var(--muted);">${inmates_list.slice(0,3).map(i=>`${i.fname} ${i.lname}`).join(', ')}${inmates_list.length>3?' + '+(inmates_list.length-3)+' more':''}</div>` : '<div style="margin-top:12px;font-size:12px;color:var(--muted);">No active inmates assigned</div>'}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+//  GUARDS
+// ═══════════════════════════════════════
+function renderGuardTable() {
+  const q = (document.getElementById('sg-q')||{value:''}).value.toLowerCase();
+  const sh = (document.getElementById('sg-shift')||{value:''}).value;
+  const filtered = guards.filter(g=>{
+    return (!q||(g.name+' '+g.rank+' '+g.badge+' '+g.block).toLowerCase().includes(q)) && (!sh||g.shift===sh);
+  });
+  document.getElementById('guard-tbody').innerHTML = filtered.map((g,idx)=>
+    `<tr>
+      <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar" style="background:#EAF3DE;color:#3B6D11;">${ini(g.name.split(' ')[1]||'G',g.name.split(' ')[2]||'')}</div><span style="font-weight:500;">${g.name}</span></div></td>
+      <td style="font-size:12px;">${g.rank}</td>
+      <td style="font-size:12px;color:var(--muted);">${g.badge}</td>
+      <td style="font-size:12px;">${g.block}</td>
+      <td style="font-size:12px;">${g.shift}</td>
+      <td>${dutyBadge(g.status)}</td>
+      <td><button class="btn btn-sm btn-danger btn-icon" onclick="deleteGuard(${idx})" title="Remove">🗑️</button></td>
+    </tr>`
+  ).join('') || '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted);">No guards found.</td></tr>';
+}
+
+function addGuard() {
+  const n = document.getElementById('gm-name').value.trim();
+  const b = document.getElementById('gm-badge').value.trim();
+  if (!n) { alert('Name is required.'); return; }
+  if (!b) { alert('Badge number is required.'); return; }
+  guards.push({name:n,rank:document.getElementById('gm-rank').value,badge:b,block:document.getElementById('gm-block').value,shift:document.getElementById('gm-shift').value,status:document.getElementById('gm-status').value});
+  logActivity('🛡️','Guard added — '+n);
+  save();
+  closeModal('guard-modal');
+  document.getElementById('gm-name').value='';
+  document.getElementById('gm-badge').value='';
+  renderGuardTable();
+  showAlert('guard-alert','success','Guard '+n+' added successfully.');
+}
+
+function deleteGuard(idx) {
+  if (!confirm('Remove this guard record?')) return;
+  const g = guards[idx];
+  guards.splice(idx,1);
+  logActivity('🗑️','Guard record removed — '+g.name);
+  save();
+  renderGuardTable();
+}
+
+// ═══════════════════════════════════════
+//  VISITORS
+// ═══════════════════════════════════════
+function populateInmateSelect() {
+  const sel = document.getElementById('vm-inmate');
+  sel.innerHTML = inmates.filter(i=>i.status!=='Released').map(i=>`<option value="${i.id}">${i.fname} ${i.lname} (${i.id})</option>`).join('');
+}
+
+function renderVisitorTable() {
+  const q = (document.getElementById('sv-q')||{value:''}).value.toLowerCase();
+  const d = (document.getElementById('sv-date')||{value:''}).value;
+  const filtered = visitors.filter(v=>{
+    const s = (v.name+' '+v.inmate+' '+v.inmateId).toLowerCase();
+    return (!q||s.includes(q)) && (!d||v.date===d);
+  });
+  document.getElementById('visitor-tbody').innerHTML = filtered.map((v,idx)=>
+    `<tr>
+      <td style="font-weight:500;">${v.name}</td>
+      <td style="font-size:12px;">${v.rel}</td>
+      <td style="font-size:12px;">${v.inmate}<br><span style="color:var(--muted);font-size:11px;">${v.inmateId}</span></td>
+      <td style="font-size:12px;">${v.purpose}</td>
+      <td style="font-size:12px;">${v.date}</td>
+      <td style="font-size:12px;">${v.time||'—'}</td>
+      <td><button class="btn btn-sm btn-danger btn-icon" onclick="deleteVisitor(${idx})" title="Remove">🗑️</button></td>
+    </tr>`
+  ).join('') || '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted);">No visitor logs found.</td></tr>';
+}
+
+function addVisitor() {
+  const n = document.getElementById('vm-name').value.trim();
+  if (!n) { alert('Visitor name is required.'); return; }
+  const sel = document.getElementById('vm-inmate');
+  const inmateId = sel.value;
+  const inmate = inmates.find(i=>i.id===inmateId);
+  visitors.unshift({
+    name:n, vid:document.getElementById('vm-id').value.trim(),
+    rel:document.getElementById('vm-rel').value,
+    inmate: inmate ? inmate.fname+' '+inmate.lname : '—',
+    inmateId: inmateId||'—',
+    purpose:document.getElementById('vm-purpose').value,
+    date:document.getElementById('vm-date').value||today(),
+    time:document.getElementById('vm-time').value,
+    items:document.getElementById('vm-items').value.trim(),
+  });
+  logActivity('👤','Visitor logged — '+n+' visited '+(inmate?inmate.fname+' '+inmate.lname:'—'));
+  save();
+  closeModal('visitor-modal');
+  ['vm-name','vm-id','vm-items','vm-time'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('vm-date').value=today();
+  renderVisitorTable();
+  showAlert('visitor-alert','success','Visitor '+n+' logged successfully.');
+}
+
+function deleteVisitor(idx) {
+  if (!confirm('Remove this visitor log?')) return;
+  visitors.splice(idx,1);
+  save();
+  renderVisitorTable();
+}
+
+document.getElementById('visitor-modal').addEventListener('click',function(e){
+  if(e.target===this) { closeModal('visitor-modal'); }
+});
+
+// populate inmate select when visitor modal opens
+document.querySelector('[onclick="openModal(\'visitor-modal\')"]') && (() => {
+  const orig = document.querySelector('[onclick="openModal(\'visitor-modal\')"]');
+  orig.addEventListener('click', ()=>{ populateInmateSelect(); document.getElementById('vm-date').value=today(); });
+})();
+
+// ═══════════════════════════════════════
+//  REPORTS
+// ═══════════════════════════════════════
+function generateReport(type) {
+  const box = document.getElementById('report-output');
+  const title = document.getElementById('report-title');
+  const body = document.getElementById('report-body');
+  box.style.display='block';
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+
+  if (type==='population') {
+    title.textContent='Inmate Population Report — '+today();
+    const rows = inmates.map(i=>`<tr><td>${i.id}</td><td>${i.fname} ${i.lname}</td><td>${i.gender}</td><td>${i.offense}</td><td>${statusBadge(i.status)}</td><td>${secBadge(i.security)}</td><td>${i.cell}</td><td>${i.admit||'—'}</td></tr>`).join('');
+    body.innerHTML=`<table><thead><tr><th>ID</th><th>Name</th><th>Gender</th><th>Offense</th><th>Status</th><th>Security</th><th>Cell</th><th>Admission</th></tr></thead><tbody>${rows}</tbody></table>`;
+  } else if (type==='awaiting') {
+    title.textContent='Awaiting Trial Report — '+today();
+    const at = inmates.filter(i=>i.status==='Awaiting Trial');
+    body.innerHTML=`<p style="font-size:13px;margin-bottom:14px;"><strong>${at.length}</strong> inmates currently awaiting trial (${Math.round(at.length/inmates.length*100||0)}% of population).</p>`+
+      `<table><thead><tr><th>ID</th><th>Name</th><th>Offense</th><th>Security</th><th>Admission</th><th>Court #</th></tr></thead><tbody>${at.map(i=>`<tr><td>${i.id}</td><td>${i.fname} ${i.lname}</td><td>${i.offense}</td><td>${secBadge(i.security)}</td><td>${i.admit||'—'}</td><td>${i.court||'—'}</td></tr>`).join('')||'<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--muted);">No records.</td></tr>'}</tbody></table>`;
+  } else if (type==='release') {
+    title.textContent='Release Schedule — '+today();
+    const rel = inmates.filter(i=>i.release).sort((a,b)=>a.release.localeCompare(b.release));
+    body.innerHTML=`<table><thead><tr><th>ID</th><th>Name</th><th>Status</th><th>Cell</th><th>Release Date</th></tr></thead><tbody>${rel.map(i=>`<tr><td>${i.id}</td><td>${i.fname} ${i.lname}</td><td>${statusBadge(i.status)}</td><td>${i.cell}</td><td style="font-weight:600;">${i.release}</td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--muted);">No release dates set.</td></tr>'}</tbody></table>`;
+  } else if (type==='security') {
+    title.textContent='Security Classification Report — '+today();
+    ['Maximum','Medium','Minimum'].forEach(sec=>{
+      const list=inmates.filter(i=>i.security===sec);
+      body.innerHTML=(body.innerHTML||'')+`<h4 style="margin-bottom:8px;">${sec} Security — ${list.length} inmates</h4><table style="margin-bottom:20px;"><thead><tr><th>ID</th><th>Name</th><th>Offense</th><th>Status</th></tr></thead><tbody>${list.map(i=>`<tr><td>${i.id}</td><td>${i.fname} ${i.lname}</td><td>${i.offense}</td><td>${statusBadge(i.status)}</td></tr>`).join('')||'<tr><td colspan="4" style="text-align:center;padding:8px;color:var(--muted);">None</td></tr>'}</tbody></table>`;
+    });
+    body.innerHTML = '<div>'+body.innerHTML+'</div>';
+  } else if (type==='offense') {
+    title.textContent='Offense Breakdown — '+today();
+    const counts={};
+    inmates.forEach(i=>{ counts[i.offense]=(counts[i.offense]||0)+1; });
+    const total=inmates.length||1;
+    body.innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+      const pct=Math.round(v/total*100);
+      return `<div style="margin-bottom:14px;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;"><span style="font-weight:500;">${k}</span><span style="color:var(--muted);">${v} inmates (${pct}%)</span></div><div class="progress"><div class="progress-fill" style="width:${pct}%;background:var(--accent);"></div></div></div>`;
+    }).join('');
+  }
+}
+
+function printReport() {
+  const title = document.getElementById('report-title').textContent;
+  const body = document.getElementById('report-body').innerHTML;
+  const win = window.open('','_blank');
+  win.document.write(`<html><head><title>${title}</title><style>body{font-family:sans-serif;padding:24px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ccc;padding:8px;font-size:12px;text-align:left;}th{background:#f0f0f0;}.badge{padding:2px 8px;border-radius:10px;font-size:11px;}</style></head><body><h2>${title}</h2>${body}</body></html>`);
+  win.document.close();
+  win.print();
+}
+
+function exportCSV() {
+  const headers = ['ID','First Name','Last Name','Date of Birth','Gender','State','Nationality','Offense','Status','Security','Cell','Admission','Release','Court Number','Description'];
+  const rows = inmates.map(i=>[i.id,i.fname,i.lname,i.dob,i.gender,i.state,i.nation,i.offense,i.status,i.security,i.cell,i.admit,i.release,i.court,(i.desc||'').replace(/,/g,' ')]);
+  const csv = [headers,...rows].map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='inmates_export_'+today()+'.csv';
+  a.click();
+}
+
+// ═══════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════
+function loadSettings() {
+  document.getElementById('cfg-name').value=settings.name||'';
+  document.getElementById('cfg-loc').value=settings.loc||'';
+  document.getElementById('cfg-cap').value=settings.cap||180;
+  document.getElementById('cfg-co').value=settings.co||'';
+  document.getElementById('cfg-admin-name').value=adminCreds.name||'';
+  document.getElementById('cfg-admin-email').value=adminCreds.email||'';
+}
+function saveSettings() {
+  settings.name=document.getElementById('cfg-name').value;
+  settings.loc=document.getElementById('cfg-loc').value;
+  settings.cap=parseInt(document.getElementById('cfg-cap').value)||180;
+  settings.co=document.getElementById('cfg-co').value;
+  save();
+  showAlert('settings-alert','success','Facility settings saved.');
+}
+function updateAdmin() {
+  const n=document.getElementById('cfg-admin-name').value.trim();
+  const e=document.getElementById('cfg-admin-email').value.trim();
+  const p1=document.getElementById('cfg-pw1').value;
+  const p2=document.getElementById('cfg-pw2').value;
+  if (p1 && p1!==p2) { showAlert('settings-alert','error','Passwords do not match.'); return; }
+  adminCreds.name=n||adminCreds.name;
+  adminCreds.email=e||adminCreds.email;
+  if (p1) adminCreds.pw=p1;
+  document.getElementById('sb-name').textContent=adminCreds.name;
+  save();
+  document.getElementById('cfg-pw1').value='';
+  document.getElementById('cfg-pw2').value='';
+  showAlert('settings-alert','success','Admin account updated.');
+}
+function resetData() {
+  inmates=JSON.parse(JSON.stringify(DEFAULT_INMATES));
+  guards=JSON.parse(JSON.stringify(DEFAULT_GUARDS));
+  visitors=JSON.parse(JSON.stringify(DEFAULT_VISITORS));
+  activity=[{icon:'🔄',msg:'Data reset to defaults',time:now()}];
+  save();
+  alert('Data has been reset to defaults.');
+}
+
+// ═══════════════════════════════════════
+//  VISITOR MODAL SETUP
+// ═══════════════════════════════════════
+document.querySelector('[onclick="openModal(\'visitor-modal\')"]') && document.querySelector('[onclick="openModal(\'visitor-modal\')"]').removeAttribute('onclick');
+document.querySelectorAll('[onclick]').forEach(el=>{
+  if(el.getAttribute('onclick') && el.getAttribute('onclick').includes("visitor-modal")) {
+    const orig = el.getAttribute('onclick');
+    el.onclick = function(){ populateInmateSelect(); document.getElementById('vm-date').value=today(); openModal('visitor-modal'); };
+  }
+});
+
+// ═══════════════════════════════════════
+//  THEME
+// ═══════════════════════════════════════
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('pms_theme', theme);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+// Load saved theme, default to dark
+applyTheme(localStorage.getItem('pms_theme') || 'dark');
+
+// Init
+document.getElementById('r-admit').value = today();
+</script>
+</body>
+</html>
