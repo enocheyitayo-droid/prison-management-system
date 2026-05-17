@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NCoS Prison Management System</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════ LOGIN ═══════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon">🏛️</div>
+      <h1>Prison Management System</h1>
+      <p>Nigerian Correctional Service (NCoS)</p>
+    </div>
+    <div id="login-alert" class="alert alert-error">Invalid email or password. Please try again.</div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label>Admin Email</label>
+      <input type="email" id="l-email" value="admin@ncos.gov.ng" placeholder="admin@ncos.gov.ng">
+    </div>
+    <div class="form-group" style="margin-bottom:20px;">
+      <label>Password</label>
+      <input type="password" id="l-pw" value="admin123" placeholder="••••••••">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px;" onclick="doLogin()">Sign in →</button>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;">Default: admin@ncos.gov.ng / admin123</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ APP ═══════════════════════════════ -->
+<div id="app" style="display:none;min-height:100vh;position:relative;">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-header">
+      <div class="logo-text">🏛️ NCoS — PMS</div>
+      <div class="logo-sub">Nigerian Correctional Service</div>
+    </div>
+
+    <div class="sb-section">Main</div>
+    <div class="nav-item active" onclick="nav('dashboard')"><span class="ni">📊</span> Dashboard</div>
+    <div class="nav-item" onclick="nav('inmates')"><span class="ni">👥</span> Inmates</div>
+    <div class="nav-item" onclick="nav('register')"><span class="ni">➕</span> Register Inmate</div>
+    <div class="nav-item" onclick="nav('cases')"><span class="ni">📋</span> Cases & Offenses</div>
+
+    <div class="sb-section">Facility</div>
+    <div class="nav-item" onclick="nav('cells')"><span class="ni">🚪</span> Cell Blocks</div>
+    <div class="nav-item" onclick="nav('guards')"><span class="ni">🛡️</span> Guard Management</div>
+    <div class="nav-item" onclick="nav('visitors')"><span class="ni">👤</span> Visitor Logs</div>
+    <div class="nav-item" onclick="nav('reports')"><span class="ni">📈</span> Reports</div>
+
+    <div class="sb-section">System</div>
+    <div class="nav-item" onclick="nav('settings')"><span class="ni">⚙️</span> Settings</div>
+
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="avatar" style="width:28px;height:28px;font-size:11px;" id="sb-avatar">AO</div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);" id="sb-name">Supt. Adaeze Obi</div>
+          <div style="font-size:11px;">Administrator</div>
+        </div>
+      </div>
+      <button class="btn btn-sm" style="width:calc(100% - 12px);margin:4px 6px;justify-content:center;" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div class="topbar">
+      <h2 id="page-title">Dashboard</h2>
+      <div class="topbar-right">
+        <span style="font-size:12px;color:var(--muted);" id="topbar-date"></span>
+        <button id="theme-toggle" class="btn btn-sm" onclick="toggleTheme()" title="Toggle dark/light mode" style="font-size:16px;padding:5px 10px;">🌙</button>
+        <span style="font-size:12px;background:var(--success-light);color:var(--success);padding:4px 10px;border-radius:20px;font-weight:600;">● System Online</span>
+      </div>
+    </div>
+
+    <div id="content">
+
+      <!-- ── DASHBOARD ── -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat">
+            <div class="stat-label">Total Inmates</div>
+            <div class="stat-value" id="s-total">0</div>
+            <div class="stat-sub">All registered records</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Awaiting Trial</div>
+            <div class="stat-value" id="s-awaiting" style="color:var(--warning)">0</div>
+            <div class="stat-sub" id="s-awaiting-pct">— of population</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Convicted</div>
+            <div class="stat-value" id="s-convicted" style="color:var(--danger)">0</div>
+            <div class="stat-sub">Serving sentences</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Released</div>
+            <div class="stat-value" id="s-released" style="color:var(--success)">0</div>
+            <div class="stat-sub">Ex-convicts on record</div>
+          </div>
+        </div>
+
+        <div class="two-col" style="margin-bottom:16px;">
+          <div class="card">
+            <div class="card-head"><h3>Security classification</h3></div>
+            <div style="padding:16px 18px;" id="dash-security"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Recent activity</h3></div>
+            <div id="dash-activity"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Latest registered inmates</h3>
+            <button class="btn btn-sm" onclick="nav('inmates')">View all →</button>
+          </div>
+          <table id="dash-table">
+            <thead><tr><th>ID</th><th>Name</th><th>Offense</th><th>Status</th><th>Security</th><th>Cell</th></tr></thead>
+            <tbody id="dash-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── INMATES ── -->
+      <div class="page" id="page-inmates">
+        <div id="inmate-alert" class="alert"></div>
+        <div class="search-bar">
+          <input type="text" id="si-q" placeholder="🔍  Search by name, ID, offense..." oninput="renderInmateTable()">
+          <select id="si-status" onchange="renderInmateTable()">
+            <option value="">All statuses</option>
+            <option>Awaiting Trial</option>
+            <option>Convicted</option>
+            <option>Released</option>
+          </select>
+          <select id="si-sec" onchange="renderInmateTable()">
+            <option value="">All security levels</option>
+            <option>Minimum</option>
+            <option>Medium</option>
+            <option>Maximum</option>
+          </select>
+          <select id="si-gender" onchange="renderInmateTable()">
+            <option value="">All genders</option>
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+          <button class="btn btn-primary" onclick="nav('register')">➕ Register New</button>
+        </div>
+        <div class="card">
+          <table id="inmate-table">
+            <thead><tr><th>ID</th><th>Name</th><th>Gender</th><th>Offense</th><th>Status</th><th>Security</th><th>Cell</th><th>Admission</th><th>Actions</th></tr></thead>
+            <tbody id="inmate-tbody"></tbody>
+          </table>
+        </div>
+        <div id="inmate-count" style="font-size:12px;color:var(--muted);text-align:right;margin-top:8px;"></div>
+      </div>
+
+      <!-- ── REGISTER ── -->
+      <div class="page" id="page-register">
+        <div id="reg-alert" class="alert"></div>
+        <div class="section-card">
+          <div class="sc-head">Personal Information</div>
+          <div class="sc-body">
+            <div class="form-grid">
+              <div class="form-group"><label>First Name *</label><input id="r-fname" placeholder="e.g. Emeka"></div>
+              <div class="form-group"><label>Last Name *</label><input id="r-lname" placeholder="e.g. Okonkwo"></div>
+              <div class="form-group"><label>Date of Birth</label><input id="r-dob" type="date"></div>
+              <div class="form-group"><label>Gender</label>
+                <select id="r-gender"><option>Male</option><option>Female</option><option>Other</option></select>
+              </div>
+              <div class="form-group"><label>State of Origin</label><input id="r-state" placeholder="e.g. Lagos"></div>
+              <div class="form-group"><label>Nationality</label><input id="r-nation" placeholder="e.g. Nigerian" value="Nigerian"></div>
+              <div class="form-group full"><label>Home Address</label><input id="r-address" placeholder="Last known address before incarceration"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="sc-head">Case Information</div>
+          <div class="sc-body">
+            <div class="form-grid">
+              <div class="form-group"><label>Offense Category *</label>
+                <select id="r-offense">
+                  <option>Armed robbery</option><option>Murder / homicide</option>
+                  <option>Drug trafficking</option><option>Fraud / embezzlement</option>
+                  <option>Assault</option><option>Theft</option><option>Kidnapping</option>
+                  <option>Terrorism</option><option>Sexual offense</option><option>Cybercrime</option><option>Other</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Status *</label>
+                <select id="r-status"><option>Awaiting Trial</option><option>Convicted</option><option>Released</option></select>
+              </div>
+              <div class="form-group"><label>Security Classification</label>
+                <select id="r-sec"><option>Minimum</option><option>Medium</option><option>Maximum</option></select>
+              </div>
+              <div class="form-group"><label>Cell Block</label>
+                <select id="r-cell"><option>Block A</option><option>Block B</option><option>Block C (Female)</option><option>Block D</option><option>Remand Wing</option></select>
+              </div>
+              <div class="form-group"><label>Admission Date</label><input id="r-admit" type="date"></div>
+              <div class="form-group"><label>Expected Release Date</label><input id="r-release" type="date"></div>
+              <div class="form-group"><label>Court / Case Number</label><input id="r-court" placeholder="e.g. HCL/12A/2024"></div>
+              <div class="form-group"><label>Presiding Judge</label><input id="r-judge" placeholder="e.g. Hon. Justice Adewale"></div>
+              <div class="form-group full"><label>Case Description / Charges</label>
+                <textarea id="r-desc" placeholder="Provide a brief summary of the offense, circumstances of arrest, and relevant case notes..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="sc-head">Next of Kin / Emergency Contact</div>
+          <div class="sc-body">
+            <div class="form-grid">
+              <div class="form-group"><label>Full Name</label><input id="r-kin-name" placeholder="Next of kin name"></div>
+              <div class="form-group"><label>Relationship</label>
+                <select id="r-kin-rel"><option>Spouse</option><option>Parent</option><option>Sibling</option><option>Child</option><option>Other</option></select>
+              </div>
+              <div class="form-group"><label>Phone Number</label><input id="r-kin-phone" placeholder="e.g. 08012345678"></div>
+              <div class="form-group"><label>Address</label><input id="r-kin-addr" placeholder="Next of kin address"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button class="btn" onclick="clearRegForm()">Clear form</button>
+          <button class="btn" onclick="nav('inmates')">Cancel</button>
+          <button class="btn btn-primary" onclick="registerInmate()">✅ Register Inmate</button>
+        </div>
+      </div>
+
+      <!-- ── CASES ── -->
+      <div class="page" id="page-cases">
+        <div class="stats-grid" id="case-stats" style="grid-template-columns:repeat(3,1fr);"></div>
+        <div class="search-bar">
+          <input type="text" id="sc-q" placeholder="🔍  Search by inmate name, ID, offense..." oninput="renderCaseTable()">
+          <select id="sc-status" onchange="renderCaseTable()">
+            <option value="">All statuses</option><option>Awaiting Trial</option><option>Convicted</option><option>Released</option>
+          </select>
+        </div>
+        <div class="card">
+          <table id="case-table">
+            <thead><tr><th>Inmate ID</th><th>Name</th><th>Offense</th><th>Status</th><th>Court #</th><th>Admission</th><th>Release</th><th>Actions</th></tr></thead>
+            <tbody id="case-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── CELLS ── -->
+      <div class="page" id="page-cells">
+        <div class="cell-grid" id="cell-grid"></div>
+      </div>
+
+      <!-- ── GUARDS ── -->
+      <div class="page" id="page-guards">
+        <div id="guard-alert" class="alert"></div>
+        <div class="search-bar">
+          <input type="text" id="sg-q" placeholder="🔍  Search guards..." oninput="renderGuardTable()">
+          <select id="sg-shift" onchange="renderGuardTable()">
+            <option value="">All shifts</option>
+            <option>Morning (6am–2pm)</option><option>Afternoon (2pm–10pm)</option><option>Night (10pm–6am)</option>
+          </select>
+          <button class="btn btn-primary" onclick="openModal('guard-modal')">➕ Add Guard</button>
+        </div>
+        <div class="card">
+          <table id="guard-table">
+            <thead><tr><th>Name</th><th>Rank</th><th>Badge No.</th><th>Assigned Block</th><th>Shift</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="guard-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── VISITORS ── -->
+      <div class="page" id="page-visitors">
+        <div id="visitor-alert" class="alert"></div>
+        <div class="search-bar">
+          <input type="text" id="sv-q" placeholder="🔍  Search visitors or inmates..." oninput="renderVisitorTable()">
+          <input type="date" id="sv-date" onchange="renderVisitorTable()" title="Filter by visit date">
+          <button class="btn btn-primary" onclick="openModal('visitor-modal')">➕ Log Visitor</button>
+        </div>
+        <div class="card">
+          <table id="visitor-table">
+            <thead><tr><th>Visitor Name</th><th>Relationship</th><th>Inmate Visited</th><th>Purpose</th><th>Date</th><th>Time In</th><th>Actions</th></tr></thead>
+            <tbody id="visitor-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── REPORTS ── -->
+      <div class="page" id="page-reports">
+        <div class="report-grid">
+          <div class="report-card" onclick="generateReport('population')">
+            <div class="rc-icon">📋</div>
+            <div class="rc-title">Inmate Population Report</div>
+            <div class="rc-sub">Full census with demographics</div>
+          </div>
+          <div class="report-card" onclick="generateReport('awaiting')">
+            <div class="rc-icon">⏳</div>
+            <div class="rc-title">Awaiting Trial Report</div>
+            <div class="rc-sub">Pre-trial detention status</div>
+          </div>
+          <div class="report-card" onclick="generateReport('release')">
+            <div class="rc-icon">🚪</div>
+            <div class="rc-title">Release Schedule</div>
+            <div class="rc-sub">Upcoming releases & completions</div>
+          </div>
+          <div class="report-card" onclick="generateReport('security')">
+            <div class="rc-icon">🛡️</div>
+            <div class="rc-title">Security Classification</div>
+            <div class="rc-sub">Minimum / Medium / Maximum</div>
+          </div>
+          <div class="report-card" onclick="generateReport('offense')">
+            <div class="rc-icon">⚖️</div>
+            <div class="rc-title">Offense Breakdown</div>
+            <div class="rc-sub">Categories and counts</div>
+          </div>
+          <div class="report-card" onclick="exportCSV()">
+            <div class="rc-icon">💾</div>
+            <div class="rc-title">Export to CSV</div>
+            <div class="rc-sub">Download full inmate data</div>
+          </div>
+        </div>
+        <div class="card" id="report-output" style="display:none;">
+          <div class="card-head"><h3 id="report-title">Report</h3><button class="btn btn-sm" onclick="printReport()">🖨️ Print</button></div>
+          <div style="padding:18px;" id="report-body"></div>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS ── -->
+      <div class="page" id="page-settings">
+        <div id="settings-alert" class="alert"></div>
+        <div class="section-card">
+          <div class="sc-head">Facility Information</div>
+          <div class="sc-body">
+            <div class="form-grid">
+              <div class="form-group"><label>Facility Name</label><input id="cfg-name" value="Kirikiri Medium Security Custodial Centre"></div>
+              <div class="form-group"><label>Location</label><input id="cfg-loc" value="Apapa, Lagos State, Nigeria"></div>
+              <div class="form-group"><label>Official Capacity</label><input id="cfg-cap" type="number" value="180"></div>
+              <div class="form-group"><label>Commanding Officer</label><input id="cfg-co" value="Supt. Adaeze Obi"></div>
+              <div class="form-group"><label>Phone</label><input id="cfg-phone" value="+234 1 5550001"></div>
+              <div class="form-group"><label>Email</label><input id="cfg-email" value="kirikiri@ncos.gov.ng"></div>
+            </div>
+            <div style="text-align:right;margin-top:14px;">
+              <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="sc-head">Admin Account</div>
+          <div class="sc-body">
+            <div class="form-grid">
+              <div class="form-group"><label>Full Name</label><input id="cfg-admin-name" value="Supt. Adaeze Obi"></div>
+              <div class="form-group"><label>Email</label><input id="cfg-admin-email" value="admin@ncos.gov.ng"></div>
+              <div class="form-group"><label>New Password</label><input type="password" id="cfg-pw1" placeholder="Leave blank to keep current"></div>
+              <div class="form-group"><label>Confirm Password</label><input type="password" id="cfg-pw2" placeholder="Repeat new password"></div>
+            </div>
+            <div style="text-align:right;margin-top:14px;">
+              <button class="btn btn-primary" onclick="updateAdmin()">Update Account</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="sc-head">Data Management</div>
+          <div class="sc-body" style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn" onclick="exportCSV()">💾 Export All Data (CSV)</button>
+            <button class="btn btn-danger" onclick="if(confirm('Reset ALL inmate data to defaults? This cannot be undone.')) resetData()">🗑️ Reset to Default Data</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══════════ MODALS ═══════════ -->
+
+<!-- Inmate Detail -->
+<div class="modal-backdrop" id="inmate-modal">
+  <div class="modal" style="width:620px;">
+    <div class="modal-head">
+      <h3 id="im-title">Inmate Profile</h3>
+      <button class="modal-close" onclick="closeModal('inmate-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="im-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" id="im-delete-btn">🗑️ Delete Record</button>
+      <button class="btn btn-sm" id="im-edit-btn">✏️ Edit</button>
+      <button class="btn btn-sm" onclick="closeModal('inmate-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Guard -->
+<div class="modal-backdrop" id="guard-modal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add Guard</h3><button class="modal-close" onclick="closeModal('guard-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Full Name *</label><input id="gm-name" placeholder="e.g. Warder Bola Adeyemi"></div>
+        <div class="form-group"><label>Badge Number *</label><input id="gm-badge" placeholder="e.g. NCS-G-0042"></div>
+        <div class="form-group"><label>Rank</label>
+          <select id="gm-rank"><option>Warder</option><option>Senior Warder</option><option>Chief Warder</option><option>Assistant Superintendent</option><option>Superintendent</option></select>
+        </div>
+        <div class="form-group"><label>Assigned Block</label>
+          <select id="gm-block"><option>Block A</option><option>Block B</option><option>Block C (Female)</option><option>Block D</option><option>Remand Wing</option><option>All blocks</option></select>
+        </div>
+        <div class="form-group"><label>Shift</label>
+          <select id="gm-shift"><option>Morning (6am–2pm)</option><option>Afternoon (2pm–10pm)</option><option>Night (10pm–6am)</option></select>
+        </div>
+        <div class="form-group"><label>Status</label>
+          <select id="gm-status"><option>On duty</option><option>Off duty</option><option>On leave</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('guard-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addGuard()">Add Guard</button>
+    </div>
+  </div>
+</div>
+
+<!-- Log Visitor -->
+<div class="modal-backdrop" id="visitor-modal">
+  <div class="modal">
+    <div class="modal-head"><h3>Log Visitor</h3><button class="modal-close" onclick="closeModal('visitor-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Visitor Full Name *</label><input id="vm-name" placeholder="Full name"></div>
+        <div class="form-group"><label>ID / NIN</label><input id="vm-id" placeholder="National ID or NIN"></div>
+        <div class="form-group"><label>Relationship to Inmate</label>
+          <select id="vm-rel"><option>Spouse</option><option>Parent</option><option>Sibling</option><option>Child</option><option>Friend</option><option>Legal counsel</option><option>Chaplain / Imam</option><option>Official</option><option>Other</option></select>
+        </div>
+        <div class="form-group"><label>Inmate Visited *</label>
+          <select id="vm-inmate"></select>
+        </div>
+        <div class="form-group"><label>Purpose of Visit</label>
+          <select id="vm-purpose"><option>Personal visit</option><option>Legal consultation</option><option>Medical</option><option>Religious / Pastoral</option><option>Official</option></select>
+        </div>
+        <div class="form-group"><label>Visit Date</label><input id="vm-date" type="date"></div>
+        <div class="form-group"><label>Time In</label><input id="vm-time" type="time"></div>
+        <div class="form-group"><label>Items Brought</label><input id="vm-items" placeholder="e.g. Food, books (leave blank if none)"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('visitor-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addVisitor()">Log Visit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Report Print -->
+<div class="modal-backdrop" id="print-modal">
+  <div class="modal" style="width:700px;">
+    <div class="modal-head"><h3 id="pm-title">Report</h3><button class="modal-close" onclick="closeModal('print-modal')">✕</button></div>
+    <div class="modal-body" id="pm-body"></div>
+    <div class="modal-footer"><button class="btn btn-primary" onclick="window.print()">🖨️ Print</button><button class="btn" onclick="closeModal('print-modal')">Close</button></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
